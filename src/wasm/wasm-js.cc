@@ -359,6 +359,7 @@ void WebAssemblyInstantiate(const v8::FunctionCallbackInfo<v8::Value>& args) {
   return_value.Set(resolver->GetPromise());
 }
 
+static
 bool GetIntegerProperty(v8::Isolate* isolate, ErrorThrower* thrower,
                         Local<Context> context, Local<v8::Object> object,
                         Local<String> property, int* result, int lower_bound,
@@ -384,6 +385,22 @@ bool GetIntegerProperty(v8::Isolate* isolate, ErrorThrower* thrower,
     return true;
   }
   return false;
+}
+
+static
+bool GetBooleanProperty(v8::Isolate* isolate, ErrorThrower* thrower,
+                        Local<Context> context, Local<v8::Object> object,
+                        Local<String> property, bool* result, bool default_=false) {
+  v8::MaybeLocal<v8::Value> maybe = object->Get(context, property);
+  v8::Local<v8::Value> value;
+  if (maybe.ToLocal(&value)) {
+    bool boolean;
+    if (!value->BooleanValue(context).To(&boolean)) return false;
+    *result = boolean;
+    return true;
+  }
+  *result = default_;
+  return true;
 }
 
 const int max_table_size = 1 << 26;
@@ -479,11 +496,17 @@ void WebAssemblyMemory(const v8::FunctionCallbackInfo<v8::Value>& args) {
       return;
     }
   }
+  bool is_shared = false;
+  if (!GetBooleanProperty(isolate, &thrower, context, descriptor,
+			  v8_str(isolate, "isShared"), &is_shared)) {
+	  return;
+  }
+  auto shared = is_shared ? i::SharedFlag::kShared : i::SharedFlag::kNotShared;
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(isolate);
   size_t size = static_cast<size_t>(i::wasm::WasmModule::kPageSize) *
                 static_cast<size_t>(initial);
   i::Handle<i::JSArrayBuffer> buffer =
-      i::wasm::NewArrayBuffer(i_isolate, size, i::FLAG_wasm_guard_pages);
+      i::wasm::NewArrayBuffer(i_isolate, size, i::FLAG_wasm_guard_pages, shared);
   if (buffer.is_null()) {
     thrower.RangeError("could not allocate memory");
     return;

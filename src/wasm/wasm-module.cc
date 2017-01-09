@@ -784,7 +784,8 @@ Handle<Script> CreateWasmScript(Isolate* isolate,
 }  // namespace
 
 Handle<JSArrayBuffer> wasm::NewArrayBuffer(Isolate* isolate, size_t size,
-                                           bool enable_guard_regions) {
+                                           bool enable_guard_regions,
+                                           SharedFlag shared) {
   if (size > (kV8MaxWasmMemoryPages * WasmModule::kPageSize)) {
     // TODO(titzer): lift restriction on maximum memory allocated here.
     return Handle<JSArrayBuffer>::null();
@@ -810,7 +811,7 @@ Handle<JSArrayBuffer> wasm::NewArrayBuffer(Isolate* isolate, size_t size,
 
   Handle<JSArrayBuffer> buffer = isolate->factory()->NewJSArrayBuffer();
   JSArrayBuffer::Setup(buffer, isolate, is_external, memory,
-                       static_cast<int>(size));
+                       static_cast<int>(size), shared);
   buffer->set_is_neuterable(false);
   buffer->set_has_guard_region(enable_guard_regions);
 

@@ -426,7 +426,8 @@ int32_t GrowInstanceMemory(Isolate* isolate,
                            Handle<WasmInstanceObject> instance, uint32_t pages);
 
 Handle<JSArrayBuffer> NewArrayBuffer(Isolate* isolate, size_t size,
-                                     bool enable_guard_regions);
+                                     bool enable_guard_regions,
+                                     SharedFlag shared = SharedFlag::kNotShared);
 
 int32_t GrowWebAssemblyMemory(Isolate* isolate, Handle<Object> receiver,
                               uint32_t pages);
